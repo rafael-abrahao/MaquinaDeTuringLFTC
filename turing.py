@@ -10,7 +10,7 @@ class EndState:
 
 class TuringMachine:
     def __init__(self) -> None:
-        self.__rules = {}
+        self.__rules = {}   # {'q1a': [q2, X, R]}
         self.__tape = []
         self.__tape_length = 0
         self.__current_state = 'q1'
@@ -25,15 +25,15 @@ class TuringMachine:
                 if(pattern.match(line)):
                     rules = list(filter(None, line.split('q')))
                     next_state = rules[1]
-                    step = ['q'+next_state[:-2], next_state[-2], next_state[-1]] 
+                    step = ['q'+next_state[:-2], next_state[-2], next_state[-1]] #step = [q2, X, R]
                     self.__rules['q'+rules[0]] = step
                 else:
-                    print('Regra', line, 'não reconhecida', sep=' ')
+                    print('regra', line, 'não reconhecida', sep=' ')
                     self.__rules.clear()
                     break
 
     def load_tape(self, chain: str):
-        self.__chain = chain + ' '
+        # self.__chain = chain + ' '
         self.__tape = list(chain + ' ')
         self.__tape_length = len(chain)
 
@@ -64,11 +64,12 @@ class TuringMachine:
             print('◊', end =' ')
         print('...')
         print(' ' * space, '↑', sep='')
-        print(' ' * space, self.__current_state, sep='', end='\n\n')
+        print(' ' * space, self.__current_state, sep='')
+        print()
 
     def run_machine(self, verbose = True) -> EndState:
         if(len(self.__rules) == 0):
-            print("Aviso: nenhuma regra encontrada")
+            print("aviso: nenhuma regra encontrada")
         if(verbose):
             self.__print()
         while(self.__go_to_next_state()):
@@ -86,8 +87,9 @@ class TuringMachine:
     def reset(self):
         self.__current_state = 'q1'
         self.__current_position = 0
+        chain = ''.join(self.__tape)
         self.__tape.clear()
-        self.load_tape(self.__chain)
+        self.load_tape(chain.strip())
 
     def print_rules(self):
         if len(self.__rules) == 0:
@@ -95,35 +97,42 @@ class TuringMachine:
         else:
             for key in self.__rules.keys():
                 rule = self.__rules[key]
-                print(key.replace(' ', '◊'), rule[0], rule[1], rule[2], sep='')
+                print(str.replace(key, ' ', '◊'), rule[0], rule[1], rule[2], sep='')
 
 def __get_command(tm: TuringMachine) -> bool:
     cmd = input(">> ").strip()
-    if(re.match('read ', cmd)):
-        tm.read_rules_from_file(cmd[5:])
-    elif(re.match('test\s?', cmd)):
+    if(re.match('^r ', cmd)):
+        tm.read_rules_from_file(cmd[2:])
+        print('\narquivo lido\n')
+    elif(re.match('(^t )|(^t$)', cmd)):
         print()
-        tm.load_tape(cmd[5:])
+        tm.load_tape(cmd[2:])
         result = tm.run_machine()
         tm.reset()
         if(result):
-            print("Cadeia \"", cmd[5:], "\" reconhecida.", sep='', end='\n\n')
+            print("cadeia \"", cmd[2:], "\" reconhecida.", sep='')
         else:
-            print("Cadeia \"", cmd[5:], "\" não reconhecida.", sep='')
-            print("Não existe regra para \"", result.state, "\".", sep='', end='\n\n')
-    elif(re.match('^(print)$', cmd)):
+            print("cadeia \"", cmd[2:], "\" não reconhecida.", sep='')
+            print("não existe regra para \"", result.state, "\".", sep='')
+        print()
+    elif(re.match('^p$', cmd)):
         print()
         tm.print_rules()
         print()
-    elif(re.match('^(quit)$', cmd)):
+    elif(re.match('^q$', cmd)):
         return False
     else:
-        print("Comando não reconhecido")
+        print("\ncomando não reconhecido\n")
     
     return True
 
 def main():
     tm = TuringMachine()
+    print("r - ler arquivo")
+    print("t - testar cadeia")
+    print("p - imprimir regras")
+    print("q - sair")
+    print()
     while __get_command(tm):
         pass
 
